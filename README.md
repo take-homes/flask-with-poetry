@@ -10,8 +10,9 @@ The basic blog app built in the Flask
 Activate a virtual environment with Poetry and install the dependencies:
 
 ```
-$ poetry shell
+$ poetry config virtualenvs.in-project true
 $ poetry install
+$ poetry shell
 ```
 
 # Run
