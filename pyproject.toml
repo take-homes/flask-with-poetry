@@ -23,3 +23,8 @@ filterwarnings = ["error"]
 [tool.coverage.run]
 branch = true
 source = ["flaskr", "tests"]
+
+[tool.takehomes.tasks]
+install = "poetry config virtualenvs.in-project true && poetry install"
+shell = "poetry shell"
+run = "flask --app flaskr init-db && flask --app flaskr run --debug"
