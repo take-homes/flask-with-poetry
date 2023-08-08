@@ -17,6 +17,7 @@ def index():
         " ORDER BY created DESC"
     ).fetchall()
     return [{
+      "id": post["id"],
       "title": post["title"],
       "body": post["body"],
       "created": post["created"],
