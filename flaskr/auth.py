@@ -63,6 +63,8 @@ def register():
         # commit to fail. Show a validation error.
         abort(400, f"User {username} is already registered.")
 
+    return Response(status=200)
+
 
 @bp.route("/login", methods=("POST",))
 def login():
@@ -83,9 +85,11 @@ def login():
     # store the user id in a new session and return to the index
     session.clear()
     session["user_id"] = user["id"]
+    return Response(status=200)
 
 
 @bp.route("/logout")
 def logout():
     """Clear the current session, including the stored user id."""
     session.clear()
+    return Response(status=200)
