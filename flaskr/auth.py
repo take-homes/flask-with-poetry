@@ -4,7 +4,6 @@ from flask import Blueprint
 from flask import flash
 from flask import g
 from flask import redirect
-from flask import render_template
 from flask import request
 from flask import session
 from flask import url_for
@@ -43,70 +42,66 @@ def load_logged_in_user():
         )
 
 
-@bp.route("/register", methods=("GET", "POST"))
+@bp.route("/register", methods=("POST",))
 def register():
     """Register a new user.
 
     Validates that the username is not already taken. Hashes the
     password for security.
     """
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        db = get_db()
-        error = None
+    params = request.get_json(force=True)
+    username = params["username"]
+    password = params["password"]
+    db = get_db()
+    error = None
 
-        if not username:
-            error = "Username is required."
-        elif not password:
-            error = "Password is required."
+    if not username:
+        error = "Username is required."
+    elif not password:
+        error = "Password is required."
 
-        if error is None:
-            try:
-                db.execute(
-                    "INSERT INTO user (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password)),
-                )
-                db.commit()
-            except db.IntegrityError:
-                # The username was already taken, which caused the
-                # commit to fail. Show a validation error.
-                error = f"User {username} is already registered."
-            else:
-                # Success, go to the login page.
-                return redirect(url_for("auth.login"))
+    if error is None:
+        try:
+            db.execute(
+                "INSERT INTO user (username, password) VALUES (?, ?)",
+                (username, generate_password_hash(password)),
+            )
+            db.commit()
+        except db.IntegrityError:
+            # The username was already taken, which caused the
+            # commit to fail. Show a validation error.
+            error = f"User {username} is already registered."
+        else:
+            # Success, go to the login page.
+            return redirect(url_for("auth.login"))
 
-        flash(error)
-
-    return render_template("auth/register.html")
+    flash(error)
 
 
-@bp.route("/login", methods=("GET", "POST"))
+@bp.route("/login", methods=("POST",))
 def login():
     """Log in a registered user by adding the user id to the session."""
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        db = get_db()
-        error = None
-        user = db.execute(
-            "SELECT * FROM user WHERE username = ?", (username,)
-        ).fetchone()
+    params = request.get_json(force=True)
+    username = params["username"]
+    password = params["password"]
+    db = get_db()
+    error = None
+    user = db.execute(
+        "SELECT * FROM user WHERE username = ?", (username,)
+    ).fetchone()
 
-        if user is None:
-            error = "Incorrect username."
-        elif not check_password_hash(user["password"], password):
-            error = "Incorrect password."
+    if user is None:
+        error = "Incorrect username."
+    elif not check_password_hash(user["password"], password):
+        error = "Incorrect password."
 
-        if error is None:
-            # store the user id in a new session and return to the index
-            session.clear()
-            session["user_id"] = user["id"]
-            return redirect(url_for("index"))
+    if error is None:
+        # store the user id in a new session and return to the index
+        session.clear()
+        session["user_id"] = user["id"]
+        return redirect(url_for("index"))
 
-        flash(error)
-
-    return render_template("auth/login.html")
+    flash(error)
 
 
 @bp.route("/logout")
