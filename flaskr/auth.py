@@ -1,12 +1,8 @@
 import functools
 
-from flask import Blueprint
-from flask import g
-from flask import request
-from flask import session
+from flask import Blueprint, Response, g, request, session
 from werkzeug.exceptions import abort
-from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from flaskr.db import get_db
 
