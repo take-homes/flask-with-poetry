@@ -1,9 +1,6 @@
 from flask import Blueprint
-from flask import flash
 from flask import g
-from flask import redirect
 from flask import request
-from flask import url_for
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
@@ -21,7 +18,13 @@ def index():
         " FROM post p JOIN user u ON p.author_id = u.id"
         " ORDER BY created DESC"
     ).fetchall()
-    return posts
+    return [{
+      "title": post["title"],
+      "body": post["body"],
+      "created": post["created"],
+      "author_id": post["author_id"],
+      "username": post["username"],
+    } for post in posts]
 
 
 def get_post(id, check_author=True):
@@ -53,7 +56,13 @@ def get_post(id, check_author=True):
     if check_author and post["author_id"] != g.user["id"]:
         abort(403)
 
-    return post
+    return {
+      "title": post["title"],
+      "body": post["body"],
+      "created": post["created"],
+      "author_id": post["author_id"],
+      "username": post["username"],
+    }
 
 
 @bp.route("/create", methods=("POST",))
@@ -63,21 +72,13 @@ def create():
     params = request.get_json(force=True)
     title = params["title"]
     body = params["body"]
-    error = None
 
-    if not title:
-        error = "Title is required."
-
-    if error is not None:
-        flash(error)
-    else:
-        db = get_db()
-        db.execute(
-            "INSERT INTO post (title, body, author_id) VALUES (?, ?, ?)",
-            (title, body, g.user["id"]),
-        )
-        db.commit()
-        return redirect(url_for("blog.index"))
+    db = get_db()
+    db.execute(
+        "INSERT INTO post (title, body, author_id) VALUES (?, ?, ?)",
+        (title, body, g.user["id"]),
+    )
+    db.commit()
 
 
 @bp.route("/<int:id>/update", methods=("POST",))
@@ -89,20 +90,12 @@ def update(id):
     params = request.get_json(force=True)
     title = params["title"]
     body = params["body"]
-    error = None
 
-    if not title:
-        error = "Title is required."
-
-    if error is not None:
-        flash(error)
-    else:
-        db = get_db()
-        db.execute(
-            "UPDATE post SET title = ?, body = ? WHERE id = ?", (title, body, id)
-        )
-        db.commit()
-        return redirect(url_for("blog.index"))
+    db = get_db()
+    db.execute(
+        "UPDATE post SET title = ?, body = ? WHERE id = ?", (title, body, id)
+    )
+    db.commit()
 
 
 @bp.route("/<int:id>/delete", methods=("POST",))
@@ -117,4 +110,3 @@ def delete(id):
     db = get_db()
     db.execute("DELETE FROM post WHERE id = ?", (id,))
     db.commit()
-    return redirect(url_for("blog.index"))

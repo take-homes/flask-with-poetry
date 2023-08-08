@@ -1,12 +1,10 @@
 import functools
 
 from flask import Blueprint
-from flask import flash
 from flask import g
-from flask import redirect
 from flask import request
 from flask import session
-from flask import url_for
+from werkzeug.exceptions import abort
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 
@@ -21,7 +19,7 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for("auth.login"))
+            abort(401, "You are not logged in.")
 
         return view(**kwargs)
 
@@ -53,29 +51,17 @@ def register():
     username = params["username"]
     password = params["password"]
     db = get_db()
-    error = None
 
-    if not username:
-        error = "Username is required."
-    elif not password:
-        error = "Password is required."
-
-    if error is None:
-        try:
-            db.execute(
-                "INSERT INTO user (username, password) VALUES (?, ?)",
-                (username, generate_password_hash(password)),
-            )
-            db.commit()
-        except db.IntegrityError:
-            # The username was already taken, which caused the
-            # commit to fail. Show a validation error.
-            error = f"User {username} is already registered."
-        else:
-            # Success, go to the login page.
-            return redirect(url_for("auth.login"))
-
-    flash(error)
+    try:
+        db.execute(
+            "INSERT INTO user (username, password) VALUES (?, ?)",
+            (username, generate_password_hash(password)),
+        )
+        db.commit()
+    except db.IntegrityError:
+        # The username was already taken, which caused the
+        # commit to fail. Show a validation error.
+        abort(400, f"User {username} is already registered.")
 
 
 @bp.route("/login", methods=("POST",))
@@ -85,27 +71,21 @@ def login():
     username = params["username"]
     password = params["password"]
     db = get_db()
-    error = None
     user = db.execute(
         "SELECT * FROM user WHERE username = ?", (username,)
     ).fetchone()
 
     if user is None:
-        error = "Incorrect username."
+        abort(400, "Incorrect username.")
     elif not check_password_hash(user["password"], password):
-        error = "Incorrect password."
+        abort(400, "Incorrect password.")
 
-    if error is None:
-        # store the user id in a new session and return to the index
-        session.clear()
-        session["user_id"] = user["id"]
-        return redirect(url_for("index"))
-
-    flash(error)
+    # store the user id in a new session and return to the index
+    session.clear()
+    session["user_id"] = user["id"]
 
 
 @bp.route("/logout")
 def logout():
     """Clear the current session, including the stored user id."""
     session.clear()
-    return redirect(url_for("index"))
