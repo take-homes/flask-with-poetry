@@ -25,7 +25,7 @@ branch = true
 source = ["flaskr", "tests"]
 
 [tool.takehomes.tasks]
-poetry_install = "poetry install"
-run_db_init = "poetry run flask --app flaskr init-db"
-run_flask_app = "poetry run flask --app flaskr run --debug"
-sqlite_shell = "sqlite3 /projects/flask-with-poetry/instance/flaskr.sqlite"
+install = "poetry install"
+init = "poetry run flask --app flaskr init-db"
+run = "poetry run flask --app flaskr run --debug"
+sqlite-shell = "sqlite3 /projects/flask-with-poetry/instance/flaskr.sqlite"
